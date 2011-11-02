@@ -1,0 +1,30 @@
+140kit: 
+  oauth_settings: 
+    access_level: "Read and Write"
+    consumer_key: RBY3pMQVAYbHW3Eld1DUg
+    consumer_secret: SyaJ6osRIQb3O4vsKsnNJoI31tWAhBYhgCQYS04
+    requrest_token_url: https://api.twitter.com/oauth/request_token
+    authorize_url: https://api.twitter.com/oauth/authorize
+    access_token_url: https://api.twitter.com/oauth/access_token
+    callback_url: http://140kit.com
+
+  access_token: 
+    access_token: 148584489-WtUwDdPvm9KGBk0TMDiZnTwqdgQdBPQ1fjHHnWCb
+    access_token_secret: mzHKf5IlByrTbItm8eb0tbyG1IQz6HzAO0E2MzMWgE
+    access_level: "Read and Write"
+  
+  
+dgaff: 
+  oauth_settings: 
+    access_level: "Read-only"
+    consumer_key: zOXQ1JhQjmrgQZtY2k60uw
+    consumer_secret: qtECkYcBrFf1NuCoL8Nq0CyxyFy2QfjcpkW9ZuKqWY
+    requrest_token_url: https://api.twitter.com/oauth/request_token
+    authorize_url: https://api.twitter.com/oauth/authorize
+    access_token_url: https://api.twitter.com/oauth/access_token
+    callback_url: None
+
+  access_token: 
+    access_token: 13731562-HjJn5r1LTGtaqkRNTUGXC38Bs6r0UwqUwoUaSq6Bi
+    access_token_secret: 6MVWY8NOG8B9u4zQZgkN4GpfL7WRbRfGlx7V6SIlhN8
+    access_level: "Read-only"

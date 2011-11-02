@@ -1,0 +1,31 @@
+---
+# This is a sample database file for the DataMapper ORM
+development: &defaults
+  adapter: mysql
+  username: root
+  password: 
+  host: localhost
+  database: graham
+
+test:
+  <<:       *defaults
+  database: graham
+  adapter: mysql
+  username: gonkclub
+  password: cakebread
+  host: deebee.yourdefaulthomepage.com
+  port: 3306
+  # repositories:
+  #   repo1:
+  #     database: sample_1_test.db
+
+production:
+  <<:       *defaults
+  database: production.db
+
+  # repositories:
+  #   repo1:
+  #     database: sample_production.db
+
+rake:
+  <<: *defaults
