@@ -61,11 +61,11 @@ module DataMapperExtensions
     Sh::mkdir(file.split("/")[0..file.split("/").length-2].join("/"))
     return false if objs.empty?
     keys = objs.first.keys
-    f = File.open(file+".csv", "a+") 
-    csv_header = CSV.generate_line(keys)
+    f = File.open(file+".tsv", "a+") 
+    csv_header = CSV.generate_line(keys, :col_sep => "\t", :row_sep => "\0", :quote_char => '"')
     f.write(csv_header) if Sh::sh("ls #{file.split("/")[0..file.split("/").length-2].join("/")}").include?(file.split("/").last+".csv")
     objs.each do |elem|
-      row = CSV.generate_line(keys.collect{|k| elem[k]})
+      row = CSV.generate_line(keys.collect{|k| elem[k]}, :col_sep => "\t", :row_sep => "\0", :quote_char => '"')
       f.write(row)
     end
     f.close

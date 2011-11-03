@@ -12,6 +12,10 @@ module Sh
     return result
   end
   
+  def self.bt(command)
+    return `#{command}`
+  end
+  
   def self.clean_gets
     STDOUT.flush
     response = STDIN.gets

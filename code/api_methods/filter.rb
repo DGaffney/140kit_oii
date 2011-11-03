@@ -22,6 +22,7 @@ class Filter < Instance
       config.auth_method = :oauth
       config.parser   = :yajl
     end
+    @start_time = Time.now
     at_exit { do_at_exit }
   end
   
@@ -101,7 +102,6 @@ class Filter < Instance
   end
   
   def collect
-    @start_time = Time.now
     puts "Collecting: #{params_for_stream.inspect}"
     client = TweetStream::Client.new
     client.on_interval(CHECK_FOR_NEW_DATASETS_INTERVAL) { rsync_previous_files; @start_time = Time.now; puts "Switching to new files..."; client.stop if add_datasets }
@@ -144,8 +144,8 @@ class Filter < Instance
     rsync_job = fork do
       dir = lambda{|model| File.dirname(__FILE__)+'/../../../data/raw/'+model+"/"+@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}
       [Tweet, User, Entity, Geo, Coordinate].each do |model|
-        `rsync #{dir.call(model.to_s.downcase)}.csv gonkclub@nutmegunit.com:oii/raw_data/#{model.to_s.downcase}/#{@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}.csv`
-#        `rm #{dir.call(model.to_s.downcase)}.csv`
+        `rsync #{dir.call(model.to_s.downcase)}.tsv gonkclub@nutmegunit.com:oii/raw_data/#{model.to_s.downcase}/#{@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}.tsv`
+#        `rm #{dir.call(model.to_s.downcase)}.tsv`
       end
     end
     Process.detach(rsync_job)
