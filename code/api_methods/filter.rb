@@ -145,7 +145,7 @@ class Filter < Instance
       dir = lambda{|model| File.dirname(__FILE__)+'/../../../data/raw/'+model+"/"+@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}
       [Tweet, User, Entity, Geo, Coordinate].each do |model|
         `rsync #{dir.call(model.to_s.downcase)}.tsv gonkclub@nutmegunit.com:oii/raw_data/#{model.to_s.downcase}/#{@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}.tsv`
-#        `rm #{dir.call(model.to_s.downcase)}.tsv`
+        `rm #{dir.call(model.to_s.downcase)}.tsv`
       end
     end
     Process.detach(rsync_job)

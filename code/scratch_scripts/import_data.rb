@@ -17,12 +17,14 @@ class Importer
     puts "Executing mysql block..."
     config = DataMapper.repository.adapter.options
     Sh::sh("mysql -u #{config["user"]} --password='#{config["password"]}' -P #{config["port"]} -h #{config["host"]} #{config["path"].gsub("/", "")} < #{mysql_filename}")
+    Sh::sh("rm #{mysql_filename}")
     puts "Executed mysql block (#{Time.now-start} seconds)."
   end
   
     def import_headed_tsv(location, mysql_file)
     header = CSV.open(location, :col_sep => "\t", :row_sep => "\0", :quote_char => '"').first
     model = map_to_model(header)
+    debugger
     mysql_file.write("load data infile '#{location}' into table #{model.storage_name} fields terminated by '\\t' optionally enclosed by '\"' lines terminated by '\\0' ignore 1 lines (#{header.join(", ")});\n")
   end
   
@@ -59,13 +61,13 @@ class Importer
   end
 end
 gg = Importer.new
-puts "Converting Tweet..."
-gg.import_headed_tsvs("/Users/dgaffney/raw/tweet")
-puts "Converting User..."
-gg.import_headed_tsvs("/Users/dgaffney/raw/user")
-puts "Converting Geo..."
-gg.import_headed_tsvs("/Users/dgaffney/raw/geo")
-puts "Converting Coordinate..."
-gg.import_headed_tsvs("/Users/dgaffney/raw/coordinate")
-puts "Converting Entity..."
-gg.import_headed_tsvs("/Users/dgaffney/raw/entity")
+# puts "Converting Tweet..."
+# gg.import_headed_tsvs("/Users/dgaffney/raw/tweet")
+# puts "Converting User..."
+# gg.import_headed_tsvs("/Users/dgaffney/raw/user")
+ puts "Converting Geo..."
+ gg.import_headed_tsvs("/Users/dgaffney/raw/geo")
+# puts "Converting Coordinate..."
+# gg.import_headed_tsvs("/Users/dgaffney/raw/coordinate")
+#puts "Converting Entity..."
+#gg.convert_to_tsvs("/Users/dgaffney/raw/entity")
