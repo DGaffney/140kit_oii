@@ -63,7 +63,7 @@ module DataMapperExtensions
     keys = objs.first.keys
     f = File.open(file+".csv", "a+") 
     csv_header = CSV.generate_line(keys)
-    f.write(csv_header) if f.pos == 0
+    f.write(csv_header) if Sh::sh("ls #{file.split("/")[0..file.split("/").length-2].join("/")}").include?(file.split("/").last+".csv")
     objs.each do |elem|
       row = CSV.generate_line(keys.collect{|k| elem[k]})
       f.write(row)

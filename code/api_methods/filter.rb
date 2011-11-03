@@ -6,7 +6,7 @@ class Filter < Instance
   STREAM_API_URL = "http://stream.twitter.com"
   CHECK_FOR_NEW_DATASETS_INTERVAL = 60#*10
   
-  attr_accessor :user_account, :username, :password, :next_dataset_ends, :queue, :params, :datasets, :start_time
+  attr_accessor :user_account, :username, :password, :next_dataset_ends, :queue, :params, :datasets, :start_time, :last_start_time
 
   def initialize
     super
@@ -105,11 +105,11 @@ class Filter < Instance
     @start_time = Time.now
     puts "Collecting: #{params_for_stream.inspect}"
     client = TweetStream::Client.new
-    client.on_interval(CHECK_FOR_NEW_DATASETS_INTERVAL) { rsync_previous_files; @start_time = Time.now;puts "Switching to new files..."; client.stop if add_datasets }
+    client.on_interval(CHECK_FOR_NEW_DATASETS_INTERVAL) { @last_start_time = @start_time; @start_time = Time.now; rsync_previous_files; puts "Switching to new files..."; client.stop if add_datasets }
     client.on_limit { |skip_count| puts "\nWe are being rate limited! We lost #{skip_count} tweets!\n" }
     client.on_error { |message| puts "\nError: #{message}\n";client.stop }
     client.filter(params_for_stream) do |tweet|
-      puts "[tweet] #{tweet[:user][:screen_name]}: #{tweet[:text]}"
+#      puts "[tweet] #{tweet[:user][:screen_name]}: #{tweet[:text]}"
       @queue << tweet
       save_queue if @queue.length >= BATCH_SIZE
       if @next_dataset_ends
@@ -142,13 +142,11 @@ class Filter < Instance
   end
   
   def rsync_previous_files
-#    Thread.new {
-      dir = lambda{|model| File.dirname(__FILE__)+'/../../../data/raw/'+model+"/"+@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}
+      dir = lambda{|model| File.dirname(__FILE__)+'/../../../data/raw/'+model+"/"+@username+"_"+@last_start_time.strftime("%Y-%m-%d_%H-%M-%S")}
       [Tweet, User, Entity, Geo, Coordinate].each do |model|
-        `rsync #{dir.call(model.to_s.downcase)}.csv gonkclub@nutmegunit.com:oii/raw_data/#{model.to_s.downcase}/#{@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}.csv`
+        `rsync #{dir.call(model.to_s.downcase)}.csv gonkclub@nutmegunit.com:oii/raw_data/#{model.to_s.downcase}/#{@username+"_"+@last_start_time.strftime("%Y-%m-%d_%H-%M-%S")}.csv`
 #        `rm #{dir.call(model.to_s.downcase)}.csv`
       end
-#    }
   end
 
   def data_from_queue
