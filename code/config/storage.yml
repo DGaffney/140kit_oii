@@ -4,7 +4,7 @@ test:
   user: gonkclub
   host: 208.97.135.171
 
-development:
+development2:
   type: local
   path: results #This will always be relative to project root.
 
@@ -14,4 +14,8 @@ production:
   user: some_user_on_remote_machine
   host: some.domain.name  
 
-  
+development:
+  type: remote
+  path: testerz
+  user: gonkclub
+  host: nutmegunit.com

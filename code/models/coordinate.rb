@@ -8,6 +8,6 @@ class Coordinate
   property :lat, String, :unique_index => [:unique_coordinate]
   property :lon, String, :unique_index => [:unique_coordinate]
   property :dataset_id, String
-  belongs_to :dataset, :unique_index => [:unique_coordinate], :index => [:dataset_coordinate]
-  belongs_to :tweet, :unique_index => [:unique_coordinate], :index => [:dataset_coordinate]
+  belongs_to :dataset, :unique_index => [:unique_coordinate], :index => [:dataset_coordinate], :child_key => :twitter_id
+  belongs_to :tweet, :unique_index => [:unique_coordinate], :index => [:dataset_coordinate], :child_key => :twitter_id
 end

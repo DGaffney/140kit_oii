@@ -38,8 +38,13 @@ module Sh
     return answer=="y"
   end
 
-  def self.mkdir(folder_location)
-    Sh::sh("mkdir -p #{folder_location}")
+  def self.mkdir(folder_location, location=STORAGE["type"])
+    case location
+    when "local"
+      Sh::sh("mkdir -p #{folder_location}")
+    when "remote"
+      Sh::sh("ssh #{STORAGE["user"]}@#{STORAGE["host"]} 'mkdir -p #{folder_location}'")
+    end
   end
   
   def self.decompress(file, to_location=".")

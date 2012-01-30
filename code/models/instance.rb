@@ -40,7 +40,7 @@ class Instance
   end
   
   def check_in
-    Sh::mkdir(ENV['TMP_PATH'])
+    Sh::mkdir(ENV['TMP_PATH'], "local")
     @check_in_thread = Thread.new { loop { self.touch; sleep(CHECK_IN_FREQUENCY*60) } }
   end
   

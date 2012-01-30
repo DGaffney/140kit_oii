@@ -5,7 +5,7 @@ development: &defaults
   username: root
   password: 
   host: localhost
-  database: graham
+  database: 140kit
 
 test:
   <<:       *defaults
@@ -18,6 +18,12 @@ test:
   # repositories:
   #   repo1:
   #     database: sample_1_test.db
+
+oii:
+  database: twitter
+  adapter: mysql
+  password: 4wekEDreWAhE
+  host: localhost
 
 production:
   <<:       *defaults

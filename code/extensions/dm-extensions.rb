@@ -16,8 +16,9 @@ module DataMapperExtensions
     sql_vals = [].fill(qs, 0, hashes.length).join(", ")
     sql = "#{storage_prefix} #{self.storage_name} (#{keys.uniq.join(", ")}) values #{sql_vals}"
     vals = []
+    ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
     hashes.each do |h|
-      vals += keys.collect {|k| h[k] }
+      vals += keys.collect {|k| h[k].class == String ? ic.iconv(h[k]) : h[k] }
     end
     vals.flatten!
     case DataMapper.repository.adapter.options["adapter"]
@@ -58,14 +59,21 @@ module DataMapperExtensions
   end
 
   def store_to_flat_file(objs, file=File.dirname(__FILE__)+"/../../data/raw/file")
-    Sh::mkdir(file.split("/")[0..file.split("/").length-2].join("/"))
+    Sh::mkdir(file.split("/")[0..file.split("/").length-2].join("/"), "local")
     return false if objs.empty?
-    keys = objs.first.keys
+    objs = objs.sth if objs.first.class != self && objs.first.class != Hash
+    keys = objs.first.class == Hash ? objs.first.keys.collect(&:to_s).sort : objs.first.attributes.keys.collect(&:to_s).sort
     f = File.open(file+".tsv", "a+") 
     csv_header = CSV.generate_line(keys, :col_sep => "\t", :row_sep => "\0", :quote_char => '"')
-    f.write(csv_header) if Sh::sh("ls #{file.split("/")[0..file.split("/").length-2].join("/")}").include?(file.split("/").last+".csv")
+    f.write(csv_header) #if Sh::sh("ls #{file.split("/")[0..file.split("/").length-2].join("/")}").include?(file.split("/").last+".csv")
     objs.each do |elem|
-      row = CSV.generate_line(keys.collect{|k| elem[k]}, :col_sep => "\t", :row_sep => "\0", :quote_char => '"')
+      begin
+      row = CSV.generate_line(keys.collect{|k| elem[k.to_sym]}, :col_sep => "\t", :row_sep => "\0", :quote_char => '"')
+      rescue
+        debugger
+        ic = Iconv.new('UTF-8//IGNORE', 'UTF-8')
+        row = CSV.generate_line(keys.collect{|k| elem[k.to_sym].class == String ? elem[k.to_sym].encode("ISO-8859-1") : elem[k.to_sym]}, :col_sep => "\t", :row_sep => "\0", :quote_char => '"')
+      end
       f.write(row)
     end
     f.close

@@ -4,7 +4,7 @@ class Filter < Instance
   MAX_TRACK_IDS = 10000
   BATCH_SIZE = 100
   STREAM_API_URL = "http://stream.twitter.com"
-  CHECK_FOR_NEW_DATASETS_INTERVAL = 60*10
+  CHECK_FOR_NEW_DATASETS_INTERVAL = 60
   
   attr_accessor :user_account, :username, :password, :next_dataset_ends, :queue, :params, :datasets, :start_time, :last_start_time
 
@@ -130,22 +130,30 @@ class Filter < Instance
       tweets, users, entities, geos, coordinates = data_from_queue
       @queue = []
       Thread.new {
-        dir = lambda{|model| File.dirname(__FILE__)+'/../../../data/raw/'+model+"/"+@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}
-        Tweet.store_to_flat_file(tweets, dir.call("tweet"))
-        User.store_to_flat_file(users, dir.call("user"))
-        Entity.store_to_flat_file(entities, dir.call("entity"))
-        Geo.store_to_flat_file(geos, dir.call("geo"))
-        Coordinate.store_to_flat_file(coordinates, dir.call("coordinate"))
+        dataset_ids = tweets.collect{|t| t[:dataset_id]}.uniq
+        dataset_ids.each do |dataset_id|
+          Tweet.store_to_flat_file(tweets.select{|t| t[:dataset_id] == dataset_id}, dir(Tweet, dataset_id))
+          User.store_to_flat_file(users.select{|u| u[:dataset_id] == dataset_id}, dir(User, dataset_id))
+          Entity.store_to_flat_file(entities.select{|e| e[:dataset_id] == dataset_id}, dir(Entity, dataset_id))
+          Geo.store_to_flat_file(geos.select{|g| g[:dataset_id] == dataset_id}, dir(Geo, dataset_id))
+          Coordinate.store_to_flat_file(coordinates.select{|c| c[:dataset_id] == dataset_id}, dir(Coordinate, dataset_id))
+        end
       }
     end
   end
   
+  def dir(model, dataset_id)
+    return "#{ENV["TMP_PATH"]}/#{model}/#{dataset_id}_#{@start_time.strftime("%Y-%m-%d_%H-%M-%S")}"
+  end
+  
   def rsync_previous_files
     rsync_job = fork do
-      dir = lambda{|model| File.dirname(__FILE__)+'/../../../data/raw/'+model+"/"+@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}
       [Tweet, User, Entity, Geo, Coordinate].each do |model|
-        `rsync #{dir.call(model.to_s.downcase)}.tsv gonkclub@nutmegunit.com:oii/raw_data/#{model.to_s.downcase}/#{@username+"_"+@start_time.strftime("%Y-%m-%d_%H-%M-%S")}.tsv`
-        `rm #{dir.call(model.to_s.downcase)}.tsv`
+        @datasets.each do |dataset|
+          Sh::mkdir("#{STORAGE["path"]}/#{model}")
+          store_to_disk("#{dir(model, dataset.id)}.tsv", "#{model}/#{dataset.id}_#{@start_time.strftime("%Y-%m-%d_%H-%M-%S")}.tsv")
+          `rm #{dir(model, dataset.id)}.tsv`
+        end
       end
     end
     Process.detach(rsync_job)
@@ -160,15 +168,13 @@ class Filter < Instance
     @queue.each do |json|
       tweet, user = TweetHelper.prepped_tweet_and_user(json)
       geo = GeoHelper.prepped_geo(json)
-      dataset_id = {:dataset_id => determine_dataset(json)}
-      tweets << tweet.merge(dataset_id)
-      users << user.merge(dataset_id)
-      geos << geo.merge(dataset_id)
-      coordinates = coordinates+CoordinateHelper.prepped_coordinates(json).collect{|coordinate| coordinate.merge(dataset_id)}
-      entities = entities+EntityHelper.prepped_entities(json).collect{|entity| entity.merge(dataset_id)}
+      dataset_ids = determine_datasets(json)
+      tweets      = tweets+dataset_ids.collect{|dataset_id| tweet.merge({:dataset_id => dataset_id})}
+      users       = users+dataset_ids.collect{|dataset_id| user.merge({:dataset_id => dataset_id})}
+      geos        = geos+dataset_ids.collect{|dataset_id| geo.merge({:dataset_id => dataset_id})}
+      coordinates = coordinates+CoordinateHelper.prepped_coordinates(json).collect{|coordinate| dataset_ids.collect{|dataset_id| coordinate.merge({:dataset_id => dataset_id})}}.flatten
+      entities    = entities+EntityHelper.prepped_entities(json).collect{|entity| dataset_ids.collect{|dataset_id| entity.merge({:dataset_id => dataset_id})}}.flatten
     end
-    tweets.uniq! {|t| t[:twitter_id] }
-    users.uniq! {|u| u[:twitter_id] }
     return tweets, users, entities, geos, coordinates
   end
   
@@ -191,32 +197,29 @@ class Filter < Instance
     end
   end
   
-  def determine_dataset(tweet)
-    return @datasets.first.id if @datasets.length == 1
-    if @params.has_key?("locations")
-      if tweet[:place]
-        for location in @params["locations"]
-          if in_location?(location[:params], tweet[:place][:bounding_box][:coordinates].first)
-            return location[:dataset_id]
+  def determine_datasets(tweet)
+    return [@datasets.first.id] if @datasets.length == 1
+    valid_datasets = []
+    params.each_pair do |method, values|
+      if method == "locations"
+        values.each do |value|
+          valid_datasets << value[:dataset_id] if in_location?(value[:params], tweet[:place][:bounding_box][:coordinates].first)
+        end
+      elsif method == "track"
+        values.each do |value|
+          if value[:params].include?(" ")
+            valid_datasets << value[:dataset_id] if tweet[:text].include?(value[:params])
+          else
+            valid_datasets << value[:dataset_id] if tweet[:text].split(/\W/).collect(&:downcase).include?(value[:params])
           end
         end
-      end
-    end
-    if @params.has_key?("track")
-      for term in @params["track"]
-        if tweet[:text].include?(term[:params])
-          return term[:dataset_id]
+      elsif method == "follow"
+        values.each do |value|
+          valid_datasets << value[:dataset_id] if tweet[:user][:id] == value[:params].to_i
         end
       end
     end
-    if @params.has_key?("follow")
-      for user_id in @params["follow"]
-        if tweet[:user][:id] == user_id[:params].to_i
-          return user_id[:dataset_id]
-        end
-      end
-    end
-    return nil
+    return valid_datasets
   end
   
   def in_location?(location_params, tweet_location)

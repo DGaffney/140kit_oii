@@ -41,8 +41,8 @@ class CoordinateHelper
             :geo_id => json[:place][:id],
             :user_id => json[:user][:id],
             :geo_type => json[:place][:bounding_box][:type],
-            :lat => coordinate.first,
-            :lon => coordinate.last
+            :lat => coordinate.last,
+            :lon => coordinate.first
           }
         end
       elsif json[:place][:bounding_box][:type] == "Point"
@@ -51,8 +51,8 @@ class CoordinateHelper
           :geo_id => json[:place][:id],
           :user_id => json[:user][:id],
           :geo_type => json[:place][:type],
-          :lat => json[:place][:bounding_box][:coordinates].first,
-          :lon => json[:place][:bounding_box][:coordinates].last
+          :lat => json[:place][:bounding_box][:coordinates].last,
+          :lon => json[:place][:bounding_box][:coordinates].first
         }
       else
       end
@@ -63,8 +63,8 @@ class CoordinateHelper
             :twitter_id => json[:id],
             :user_id => json[:user][:id],
             :geo_type => json[:coordinates][:type],
-            :lat => coordinate.first,
-            :lon => coordinate.last
+            :lat => coordinate.last,
+            :lon => coordinate.first
           }
         end
       elsif json[:coordinates][:type] == "Point"
@@ -72,8 +72,8 @@ class CoordinateHelper
           :twitter_id => json[:id],
           :user_id => json[:user][:id],
           :geo_type => json[:coordinates][:type],
-          :lat => json[:coordinates][:coordinates].first,
-          :lon => json[:coordinates][:coordinates].last
+          :lat => json[:coordinates][:coordinates].last,
+          :lon => json[:coordinates][:coordinates].first
         }
       else
       end
@@ -100,6 +100,7 @@ class CoordinateHelper
       end
     else return []
     end
+    debugger if coordinates.last[:lat].to_i.abs > 90
     return coordinates
   end
   

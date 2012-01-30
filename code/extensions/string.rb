@@ -19,15 +19,19 @@ class String
     # return self.split("").reject {|c| c.match(/[\w\'\-]/).nil?}.to_s
     return self.gsub(/[\'\"]/, '').gsub("#", "%23").gsub(' ', '%20')
   end
-  
+
   def classify
     if self.split(//).last == "s"
-      camelize(self.sub(/.*\./, '').chop)
+      if self.split(//)[self.split(//).length-3..self.split(//).length].join == "ies"
+        camelize(self.split(//)[0..self.split(//).length-4].join("")+"y")
+      else
+        camelize(self.sub(/.*\./, '').chop)
+      end
     else
       camelize(self.sub(/.*\./, ''))
     end
   end
-  
+
   def camelize(lower_case_and_underscored_word, first_letter_in_uppercase = true)
     if first_letter_in_uppercase
       lower_case_and_underscored_word.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_)(.)/) { $1.upcase }

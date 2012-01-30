@@ -65,4 +65,19 @@ class Array
     end
     return permutations
   end
+  
+  def structs_to_hashes
+    keys = (self.first.methods-Class.methods).collect{|x| x.to_s.gsub("=", "") if x.to_s.include?("=") && x.to_s!= "[]="}.compact
+    hashed_set = []
+    self.each do |struct|
+      object = {}
+      keys.collect{|k| object[k] = k.class == DateTime ? struct.send(k).to_time : struct.send(k)}
+      hashed_set << object
+    end
+    return hashed_set
+  end
+  
+  def sth
+    structs_to_hashes
+  end
 end

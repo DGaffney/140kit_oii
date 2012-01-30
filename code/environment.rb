@@ -17,7 +17,11 @@ require 'json'
 require 'open-uri'
 require 'twitter'
 require 'tweetstream'
+require 'iconv'
+require 'unicode'
 require 'csv'
+#Encoding.default_external = Encoding::ISO_8859_1
+#Encoding.default_internal = Encoding::ISO_8859_1
 DIR = File.dirname(__FILE__)
 
 require DIR+'/extensions/array'
@@ -39,8 +43,8 @@ ENV['TMP_PATH'] = DIR+"/tmp_files/#{ENV['INSTANCE_ID']}/scratch_processes"
 require DIR+'/model'
 models = [
   "analysis_metadata", "analytical_offering", "analytical_offering_variable", "analytical_offering_variable_descriptor", "auth_user", "coordinate", "curation",
-  "dataset", "edge", "friendship", "entity", "geo", "graph", "graph_point", "importer_task", "instance", "lock", "mail", "parameter", "post", 
-  "researcher", "ticket", "tweet", "user", "whitelisting", "worker_description"
+  "dataset", "edge", "friendship", "entity", "geo", "graph", "graph_point", "importer_task", "instance", "location", "lock", "mail", "parameter", "post", 
+  "researcher", "ticket", "trending_topic", "tweet", "user", "whitelisting", "worker_description"
 ]
 models.collect{|model| require DIR+'/models/'+model}
 
@@ -61,8 +65,8 @@ if !database.has_key?(env)
   env = "development"
 end
 database = database[env]
-puts database.inspect
-puts DataMapper.setup(:default, "#{database["adapter"]}://#{database["username"]}:#{database["password"]}@#{database["host"]}:#{database["port"] || 3000}/#{database["database"]}").inspect
+database.inspect
+DataMapper.setup(:default, "#{database["adapter"]}://#{database["username"]}:#{database["password"]}@#{database["host"]}:#{database["port"] || 3000}/#{database["database"]}?encoding=UTF8").inspect
 DataMapper.finalize
 
 require DIR+'/extensions/dm-extensions'
@@ -72,6 +76,23 @@ if !storage.has_key?(env)
   env = "development"
 end
 STORAGE = storage[env]
+case STORAGE["type"]
+when "local"
+  `mkdir -p #{STORAGE["path"]}`
+when "remote"
+  `ssh #{STORAGE["user"]}@#{STORAGE["host"]} 'mkdir -p #{STORAGE["path"]}'`
+end
+
+def store_to_disk(from, to)
+  case STORAGE["type"]
+  when "local"
+    `cp #{from} #{STORAGE["path"]}/#{to}`
+  when "remote"
+    `rsync #{from} #{STORAGE["user"]}@#{STORAGE["host"]}:#{STORAGE["path"]}/#{to}`
+  end
+end
+
+#require DIR+'/analyzer/analysis'
 
 
 Twit = Twitter::Client.new

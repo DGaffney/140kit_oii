@@ -99,7 +99,7 @@ class Dataset
     self.destroy
   end
   
-  def internal_params_lbael
+  def internal_params_label
     if self.scrape_type == "locations"
       return self.params.split(",")[0..self.params.split(",").length-2].join(",")
     else
